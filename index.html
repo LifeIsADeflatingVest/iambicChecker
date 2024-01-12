@@ -11,7 +11,7 @@
 <style>
     body {
         background-color: black;
-        color: gray;
+        color: gainsboro;
         font-family: Arial, sans-serif;
         text-align: center;
         margin: 0;
@@ -57,7 +57,7 @@
     <input type="text" id="inputText" placeholder="Type here...">
     <br>
     <button id="submit">Submit</button>
-	<p id="outcome"></p>
+	<div id="outcome"></div>
 </body>
 <script>
 let theLine="";
@@ -138,19 +138,19 @@ function processResults() {
 	
 	if (checkIamb(tmpArr) && cnt===10) {
 		theOutcome = true;
-		outcomeStr = "This is an iambic pentameter.";
+		outcomeStr = "<span style='color:lightgreen'>This is an iambic pentameter.</span>";
 	}
 	else {
 		theOutcome = false;
-		outcomeStr = "This is not an iambic pentameter.";
+		outcomeStr = "<span style='color:crimson'>This is not an iambic pentameter.</span>";
 	}
 	
 	//displaying results
-	let str1 = "Number of syllables: " + cnt + "<br>";
-	let str2 = "Emphasis pattern: " + tmpArr.join(" ") + "<br>";
-	let str3 = "Assessment: " + outcomeStr + "<br><br>";
-	let str4 = "An iambic pentameter requires precisely 10 syllables and an emphasis pattern of '0 1 0 1 0 1 0 1 0 1', that is, every other syllable is emphasized.<br>";
-	let str5 = "However, keep in mind that this assessment <em>is not</em> exact science. Computer-based detections of emphasis patterns are problematic, and actual pronunciations might differ for artistic reasons."
+	let str1 = "<p>Number of syllables: <span style='font-size:1.1em'>" + cnt + "</span></p>";
+	let str2 = "<p>Emphasis pattern: <span style='font-size:1.1em'>" + tmpArr.join(" ") + "</span></p>";
+	let str3 = "<p>Assessment: " + outcomeStr + "</p><br>";
+	let str4 = "<p>An iambic pentameter requires precisely 10 syllables and an emphasis pattern of '0 1 0 1 0 1 0 1 0 1', that is, every other syllable is emphasized. Due to the nature of monosyllabic words within a phrase (as well as limitations of the emphasis detection library), monosyllabic words are marked with <span style='font-size:1.1em'>X</span> and are treated as either 0 or 1.</p>";
+	let str5 = "<p>In any case, keep in mind that this assessment <em>is not</em> exact science. Computer-based detections of emphasis patterns are problematic, and actual pronunciations might differ for artistic reasons.</p>"
 
 	$("#outcome").html(str1+str2+str3+str4+str5);
 }
