@@ -68,7 +68,7 @@ $("#submit").click(function(){
 	theLine=document.getElementById("inputText").value;
 	$("#submit").blur();
 	if (theLine!="") {
-		let contentArray = theLine.replace(/[^a-zA-Z\s]/g, '').toLowerCase().split(/\s+/);
+		let contentArray = theLine.trim().replace(/\s+/g, ' ').toLowerCase().split(' ').filter(Boolean);
 		if (contentArray.length<11) {
 			processLine(contentArray);
 		}
