@@ -52,52 +52,85 @@
             background-color: #555;
         }
 	}
+	#again, #outcome2 {
+		display:none;
+		margin-bottom:1em;
+	}
 </style>
 <body>
-    <input type="text" id="inputText" placeholder="Type here...">
+	<textarea id="inputText" rows="4" cols="50" placeholder="Type here…"></textarea>
     <br>
     <button id="submit">Submit</button>
+	<button id="again">Clear/Reload</button>
 	<div id="outcome"></div>
+	<div id="outcome2">
+		<p>An iambic pentameter requires precisely 10 syllables and an emphasis pattern of '0 1 0 1 0 1 0 1 0 1', that is, every other syllable is emphasized. Due to the nature of monosyllabic words within a phrase (as well as limitations of the emphasis detection library), monosyllabic words are marked with <span style='font-size:1.1em'>X</span> and are treated as either 0 or 1.</p>
+		<p>In any case, keep in mind that this assessment <em>is not</em> exact science. Computer-based detections of emphasis patterns are problematic, and actual pronunciations might differ for artistic reasons.</p>
+	</div>
 </body>
 <script>
-let theLine="";
-let syllablesSum = [];
-let emphPatterns = [];
+let linesArray = []; 
+document.getElementById("inputText").value = "";
+
+$("#again").click(function(){
+	window.location.reload()
+})
 
 $("#submit").click(function(){
-	theLine=document.getElementById("inputText").value;
+	linesArray = document.getElementById("inputText").value.split("\n");
 	$("#submit").blur();
-	if (theLine!="") {
-		let contentArray = theLine.trim().replace(/\s+/g, ' ').toLowerCase().split(' ').filter(Boolean);
+	if (linesArray.length==1 && linesArray[0]=="") {
+		alert("You didn't type anything…");
+		return;
+	}
+	if (linesArray.length > 10) {
+		alert("Enter up to 10 lines…");
+		return;
+	}
+	
+	for (let i=0;i<linesArray.length;i++) {
+		let contentArray = linesArray[i].trim().replace(/[^\w\s]/g, '').toLowerCase().split(' ').filter(Boolean);
 		if (contentArray.length<11) {
-			processLine(contentArray);
+			processLine(contentArray, i, false);
 		}
 		else {
-			alert("You have entered a line with more than 10 syllables. By definition, it can't be an iambic pentameter…");
-		}
+			processLine(contentArray, i, true);
+			//alert("You have entered a line with more than 10 syllables. By definition, it can't be an iambic pentameter…");
+		}	
 	}
-	else {
-		alert("You didn't type anything…");
-	}
+	
+	$("#submit").fadeOut(200, function(){
+		$("#again").fadeIn(500);
+		$("#outcome2").fadeIn(500);
+	});
+
 });
 
-function processLine(arr) {
-    const promises = arr.map(word => getSyllables(word));
-    Promise.all(promises)
-        .then(results => {
-            syllablesSum = results.map(obj => obj[0].numSyllables);
+function processLine(arr, lineNo = 0, isOver10Syl = false) {
+	let processEnded = false;
+	if (linesArray.length == lineNo+1) {
+		processEnded = true;
+	}
+	let syllablesSum;
+	if (isOver10Syl) {
+		arr = [];
+	}
+	const promises = arr.map(word => getSyllables(word));
+	Promise.all(promises)
+		.then(results => {
+			syllablesSum = results.map(obj => obj[0].numSyllables);
 			
-            const pronPatterns = arr.map(word => getEmph(word));
-            return Promise.all(pronPatterns);
-        })
+			const pronPatterns = arr.map(word => getEmph(word));
+			return Promise.all(pronPatterns);
+		})
 		.then(res => {
-			emphPatterns = res.map(obj => obj[0].tags[0]);
-
-            processResults();
-        })
-        .catch(error => {
-            console.error("Error:", error);
-        });
+			let emphPatterns = res.map(obj => obj[0].tags[0]);
+               let lineData = { syllablesSum, emphPatterns }; 
+			processResults(lineData, lineNo, processEnded);
+		})
+		.catch(error => {
+			console.error("Error:", error);
+		});
 }
 
 function getSyllables(word) {
@@ -116,13 +149,19 @@ function getEmph(word) {
     });
 }
 
-function processResults() {
+function processResults(lineData, lineNo, processEnded) {
+    let syllablesSum = lineData.syllablesSum;
+    let emphPatterns = lineData.emphPatterns;
+	let theLineNumber = parseInt(lineNo)+1;
 	let theOutcome, outcomeStr;
 	//calculate syllable number;
 	let cnt = 0;
 	syllablesSum.forEach(function(el){
 		cnt = cnt+el;
 	});
+	if (cnt == 0) {
+		cnt = ">10";
+	}
 
     // calculate emphasis pattern
     let tmpArr = [];
@@ -146,13 +185,29 @@ function processResults() {
 	}
 	
 	//displaying results
+	let encDiv = document.createElement("div");
+	encDiv.id = "theDiv"+theLineNumber;
+	let str0 = "Line #"+theLineNumber;
 	let str1 = "<p>Number of syllables: <span style='font-size:1.1em'>" + cnt + "</span></p>";
 	let str2 = "<p>Emphasis pattern: <span style='font-size:1.1em'>" + tmpArr.join(" ") + "</span></p>";
 	let str3 = "<p>Assessment: " + outcomeStr + "</p><br>";
-	let str4 = "<p>An iambic pentameter requires precisely 10 syllables and an emphasis pattern of '0 1 0 1 0 1 0 1 0 1', that is, every other syllable is emphasized. Due to the nature of monosyllabic words within a phrase (as well as limitations of the emphasis detection library), monosyllabic words are marked with <span style='font-size:1.1em'>X</span> and are treated as either 0 or 1.</p>";
-	let str5 = "<p>In any case, keep in mind that this assessment <em>is not</em> exact science. Computer-based detections of emphasis patterns are problematic, and actual pronunciations might differ for artistic reasons.</p>"
+	$(encDiv).html(str0+str1+str2+str3);
+	document.getElementById("outcome").appendChild(encDiv);
 
-	$("#outcome").html(str1+str2+str3+str4+str5);
+	if (processEnded) { // arrange line results 
+		const outcomeDiv = document.getElementById("outcome");
+		const children = Array.from(outcomeDiv.children);
+
+		children.sort((a, b) => {
+		  const numA = parseInt(a.id.replace("theDiv", ""), 10);
+		  const numB = parseInt(b.id.replace("theDiv", ""), 10);
+		  return numA - numB;
+		});
+
+		outcomeDiv.innerHTML = ""; // Clear existing content
+		children.forEach(child => outcomeDiv.appendChild(child));
+	}
+
 }
 
 function checkIamb(tmpArr) {
